@@ -10,7 +10,9 @@
             overflow: hidden;
             margin: 0;
             font-family: 'Segoe UI', Arial, sans-serif;
-            background: #1a1333;
+            background: linear-gradient(135deg, #2d1a4d, #1a1333, #7c3daf, #f8bbd0 60%, #e1bee7 80%, #d1c4e9 90%, #251a3d 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 18s ease-in-out infinite;
         }
         .main-layout {
             display: flex;
@@ -53,22 +55,25 @@
             letter-spacing: 0.1em;
         }
         #save-api-keys {
-            background: #ccb3ecf6;
-            color: #3e2950af;
+            background: linear-gradient(135deg,#7c3daf,#f8bbd0);
+            color: #fff;
             border: none;
-            border-radius: 6px;
-            padding: 8px 0;
-            font-size: 1rem;
+            border-radius: 16px;
+            padding: 10px 0;
+            font-size: 1.1rem;
             font-weight: bold;
-            cursor: pointer;
+            box-shadow: 0 2px 8px #7c3daf88;
             margin-top: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
         }
         .container {
-            background: rgba(36, 12, 58, 0.37);
-            border-radius: 16px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
-            padding: 32px 24px;
-            max-width: 500px;
+            background: linear-gradient(135deg, rgba(45,26,77,0.92) 60%, rgba(248,187,208,0.18) 100%);
+            border-radius: 40px;
+            box-shadow: 0 8px 32px 0 #7c3daf88, 0 0 0 8px #f8bbd088, 0 0 24px 8px #f8bbd0cc;
+            border: 2.5px solid #f8bbd0;
+            padding: 44px 36px;
+            max-width: 540px;
             width: 100%;
             display: flex;
             flex-direction: column;
@@ -76,6 +81,12 @@
             position: relative;
             z-index: 1;
             margin: auto;
+            animation: breathing 8s ease-in-out infinite, glowPulse 6s ease-in-out infinite;
+        }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
         h1 {
             color: #d0c8d6f5;
@@ -84,24 +95,25 @@
             letter-spacing: 1px;
         }
         #recordBtn {
-            background: #6a1b9a;
-            color: #fff;
+            background: linear-gradient(135deg, #f8bbd0 60%, #e1bee7 100%);
+            color: #7c3daf;
             border: none;
-            padding: 16px 36px;
-            border-radius: 50px;
-            font-size: 1.1rem;
+            padding: 18px 40px;
+            border-radius: 32px;
+            font-size: 1.15rem;
             font-weight: bold;
             cursor: pointer;
             margin: 18px 0 10px 0;
-            box-shadow: 0 4px 16px rgba(106, 27, 154, 0.2);
+            box-shadow: 0 4px 24px 0 #f8bbd088, 0 0 0 6px #e1bee722;
             transition: background 0.3s, transform 0.2s;
             outline: none;
             position: relative;
         }
         #recordBtn.recording {
-            background: #8e24aa;
-            animation: pulse 1s infinite;
-            transform: scale(1.08);
+            background: linear-gradient(135deg, #e1bee7 60%, #f8bbd0 100%);
+            color: #fff;
+            animation: pulse 2.8s infinite;
+            transform: scale(1.12);
         }
         @keyframes pulse {
             0% { box-shadow: 0 0 0 0 rgba(106, 27, 154, 0.3); }
@@ -135,20 +147,21 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
         .bubble.user {
-            background: #c4b3c2;
-            color: #333;
+            background: #fce4ec;
+            color: #7c3daf;
             align-self: flex-end;
-            border-bottom-right-radius: 6px;
-            border: 2px solid #6a1b9a;
-            box-shadow: 0 0 0 2px #6a1b9a33;
+            border-bottom-right-radius: 12px;
+            border: 2px solid #f8bbd0;
+            box-shadow: 0 0 0 2px #f8bbd033;
         }
         .bubble.assistant {
-            background: #f1f8e9;
-            color: #333;
+            background: linear-gradient(135deg, #e2b9e9 80%, #c7a6b1 100%);
+            color: #7c3daf;
             align-self: flex-start;
-            border-bottom-left-radius: 6px;
-            border: 2px solid #388e3c;
-            box-shadow: 0 0 0 2px #388e3c33;
+            border-bottom-left-radius: 16px;
+            border: 2px solid #b2ebf2;
+            box-shadow: 0 0 0 4px #b2ebf233, 0 2px 12px #e1bee7aa;
+            font-weight: 500;
         }
         .spotlight {
             position: absolute;
@@ -163,37 +176,146 @@
             z-index: 0;
             pointer-events: none;
         }
+        /* Modal styles */
+        .modal {
+            display: block;
+            position: fixed;
+            z-index: 10;
+            left: 0;
+            top: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: auto;
+            background-color: rgba(30, 13, 51, 0.85);
+        }
+        .modal-content {
+            background: linear-gradient(135deg, #2d1a4d 80%, #7c3daf 100%);
+            margin: 8vh auto;
+            padding: 32px 24px;
+            border-radius: 28px;
+            width: 340px;
+            color: #f8bbd0;
+            box-shadow: 0 8px 30px #7c3daf88;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+        }
+        .modal-content h2 {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            color: #f8bbd0;
+            font-weight: bold;
+        }
+        /* Breathing animation for avatar */
+        #sakura-avatar {
+            animation: breathing 8s ease-in-out infinite;
+        }
+        @keyframes breathing {
+            0% {
+                transform: scale(1);
+                box-shadow:0 4px 24px #6a1b9a44;
+                font-size: 1rem;
+                letter-spacing: 0.01em;
+            }
+            25% {
+                font-size: 1.0005rem;
+                letter-spacing: 0.012em;
+            }
+            50% {
+                transform: scale(1.07);
+                box-shadow:0 8px 32px #6a1b9a66;
+                font-size: 1.001rem;
+                letter-spacing: 0.014em;
+            }
+            75% {
+                font-size: 1.0005rem;
+                letter-spacing: 0.012em;
+            }
+            100% {
+                transform: scale(1);
+                box-shadow:0 4px 24px #6a1b9a44;
+                font-size: 1rem;
+                letter-spacing: 0.01em;
+            }
+        }
+        .container, .container * {
+            transition: font-size 3s cubic-bezier(.4,0,.2,1), letter-spacing 3s cubic-bezier(.4,0,.2,1);
+        }
+        @keyframes glowPulse {
+            0% { box-shadow: 0 8px 40px 0 #e1bee744, 0 0 0 12px #f8bbd044, 0 0 32px 8px #e1bee7aa; }
+            50% { box-shadow: 0 12px 48px 0 #f8bbd066, 0 0 0 18px #e1bee766, 0 0 48px 16px #f8bbd0cc; }
+            100% { box-shadow: 0 8px 40px 0 #e1bee744, 0 0 0 12px #f8bbd044, 0 0 32px 8px #e1bee7aa; }
+        }
+        .container .cute-overlay {
+            pointer-events: none;
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 2;
+        }
+        .cute-emoji {
+            position: absolute;
+            font-size: 2rem;
+            opacity: 0.85;
+            animation: floatEmojiWavy 9s linear infinite;
+            will-change: transform, opacity;
+        }
+        @keyframes floatEmojiWavy {
+            0% { transform: translateY(100%) translateX(0) scale(1) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.85; }
+            20% { transform: translateY(60%) translateX(10px) scale(1.05) rotate(10deg); opacity: 1; }
+            40% { transform: translateY(30%) translateX(-10px) scale(1.1) rotate(-10deg); }
+            60% { transform: translateY(0%) translateX(10px) scale(1.15) rotate(10deg); }
+            80% { transform: translateY(-60%) translateX(-10px) scale(1.2) rotate(-10deg); opacity: 0.7; }
+            90% { opacity: 0.2; }
+            100% { transform: translateY(-120%) translateX(0) scale(1.25) rotate(0deg); opacity: 0; }
+        }
     </style>
 </head>
 <body>
     <div class="spotlight"></div>
     <div class="main-layout">
-        <aside class="sidebar">
-            <h2>API Keys</h2>
-            <div class="config-group">
-                <label for="config-gemini">Gemini API Key</label>
-                <input type="password" id="config-gemini" placeholder="Gemini API Key" autocomplete="off">
+        <!-- Sakura Avatar with Breathing Animation -->
+        <div style="position: absolute; left: 32px; top: 32px; z-index: 2; display: flex; flex-direction: column; align-items: center;">
+            <img id="sakura-avatar" src="https://i.pinimg.com/1200x/c8/cb/e8/c8cbe877415ccd29070ac76ed2b61668.jpg" alt="Sakura Avatar" style="width:120px; height:120px; border-radius:50%; box-shadow:0 4px 24px #7c3dafb9;">
+            <button id="showApiKeyDialog" style="margin-top:13px; background:#8e40a1a4; color:#f8bbd0; border:none; border-radius:50%; width:48px; height:48px; display:flex; align-items:center; justify-content:center; font-size:1.6rem; box-shadow:0 2px 8px #7c3daf88; cursor:pointer; transition:background 0.3s;">🗝️</button>
+        </div>
+        <!-- Modal Dialog for API Keys -->
+        <div id="apiKeyModal" class="modal">
+            <div class="modal-content">
+                <h2>Enter API Keys</h2>
+                <div class="config-group">
+                    <label for="config-gemini">Gemini API Key</label>
+                    <input type="password" id="config-gemini" placeholder="Gemini API Key" autocomplete="off">
+                </div>
+                <div class="config-group">
+                    <label for="config-assemblyai">AssemblyAI API Key</label>
+                    <input type="password" id="config-assemblyai" placeholder="AssemblyAI API Key" autocomplete="off">
+                </div>
+                <div class="config-group">
+                    <label for="config-murf">Murf API Key</label>
+                    <input type="password" id="config-murf" placeholder="Murf API Key" autocomplete="off">
+                </div>
+                <div class="config-group">
+                    <label for="config-weatherapi">WeatherAPI Key</label>
+                    <input type="password" id="config-weatherapi" placeholder="WeatherAPI Key" autocomplete="off">
+                </div>
+                <div class="config-group">
+                    <label for="config-tavily">Tavily API Key</label>
+                    <input type="password" id="config-tavily" placeholder="Tavily API Key" autocomplete="off">
+                </div>
+                <button id="save-api-keys">Save API Keys</button>
+                <div id="save-status" style="color: #f8bbd0; margin-top: 9px;"></div>
             </div>
-            <div class="config-group">
-                <label for="config-assemblyai">AssemblyAI API Key</label>
-                <input type="password" id="config-assemblyai" placeholder="AssemblyAI API Key" autocomplete="off">
-            </div>
-            <div class="config-group">
-                <label for="config-murf">Murf API Key</label>
-                <input type="password" id="config-murf" placeholder="Murf API Key" autocomplete="off">
-            </div>
-            <div class="config-group">
-                <label for="config-weatherapi">WeatherAPI Key</label>
-                <input type="password" id="config-weatherapi" placeholder="WeatherAPI Key" autocomplete="off">
-            </div>
-            <div class="config-group">
-                <label for="config-tavily">Tavily API Key</label>
-                <input type="password" id="config-tavily" placeholder="Tavily API Key" autocomplete="off">
-            </div>
-            <button id="save-api-keys">Save API Keys</button>
-            <div id="save-status" style="color: #388e3c; margin-top: 8px;"></div>
-        </aside>
+        </div>
         <div class="container">
+            <div class="cute-overlay">
+                <span class="cute-emoji" style="left:10%;top:80%;animation-delay:0s;">✨</span>
+                <span class="cute-emoji" style="left:80%;top:85%;animation-delay:2s;">💖</span>
+                <span class="cute-emoji" style="left:50%;top:90%;animation-delay:1s;">🌸</span>
+                <span class="cute-emoji" style="left:20%;top:70%;animation-delay:1.5s;">🐾</span>
+                <span class="cute-emoji" style="left:70%;top:75%;animation-delay:3s;">🐱</span>
+            </div>
             <h1>Sakura 🌸</h1>
             <div class="chat-history" id="chatHistory"></div>
             <button id="recordBtn">Start Recording</button>
@@ -202,6 +324,18 @@
     </div>
     <audio id="echoAudioPlayer" style="display:none;"></audio>
     <script src="/static/script.js"></script>
+    <script>
+        // Show modal on load, hide on save
+        window.onload = function() {
+            document.getElementById('apiKeyModal').style.display = 'none';
+            document.getElementById('showApiKeyDialog').onclick = function() {
+                document.getElementById('apiKeyModal').style.display = 'block';
+            };
+            document.getElementById('save-api-keys').onclick = function() {
+                document.getElementById('apiKeyModal').style.display = 'none';
+            };
+        };
+    </script>
 </body>
 </html>
 
