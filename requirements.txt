@@ -2,6 +2,6 @@ fastapi
 uvicorn
 gtts
 requests
-tavily
+tavily-python
 python-dotenv
 assemblyai
