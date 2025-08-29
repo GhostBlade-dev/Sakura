@@ -5,3 +5,4 @@ requests
 tavily-python
 python-dotenv
 assemblyai
+python-multipart
