@@ -71,7 +71,15 @@ let isRecording = false;
 
 function connectAudioWebSocket() {
     console.log('[Client] Opening new WebSocket for audio stream...');
-    wsAudio = new WebSocket("ws://127.0.0.1:8000/ws/audio");
+    // Dynamically set WebSocket URL based on environment
+    let wsUrl;
+    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+        wsUrl = "ws://127.0.0.1:8000/ws/audio";
+    } else {
+        // Use wss and current host for production (Render)
+        wsUrl = `wss://${window.location.host}/ws/audio`;
+    }
+    wsAudio = new WebSocket(wsUrl);
     wsAudio.binaryType = "arraybuffer";
     window._murfAudioChunks = [];
     window._murfBase64AudioChunks = [];
