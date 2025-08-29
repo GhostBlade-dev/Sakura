@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sakura</title>
+    <style>
+        /* CSS only, no HTML markup here */
+        body {
+            overflow: hidden;
+            margin: 0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #1a1333;
+        }
+        .main-layout {
+            display: flex;
+            height: 100vh;
+        }
+        .sidebar {
+            width: 280px;
+            background: #2d1a4d;
+            color: #fff;
+            padding: 32px 18px 18px 18px;
+            box-shadow: 2px 0 16px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .sidebar h2 {
+            margin-top: 0;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            color: #e1d7f7;
+        }
+        .config-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 10px;
+        }
+        .config-group label {
+            font-size: 0.95rem;
+            margin-bottom: 2px;
+            color: #bba6e0;
+        }
+        .config-group input {
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid #6a1b9a;
+            background: #1a1333;
+            color: #fff;
+            font-size: 0.95rem;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            letter-spacing: 0.1em;
+        }
+        #save-api-keys {
+            background: #ccb3ecf6;
+            color: #3e2950af;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 0;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        .container {
+            background: rgba(36, 12, 58, 0.37);
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+            padding: 32px 24px;
+            max-width: 500px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+            margin: auto;
+        }
+        h1 {
+            color: #d0c8d6f5;
+            margin-bottom: 18px;
+            font-size: 2rem;
+            letter-spacing: 1px;
+        }
+        #recordBtn {
+            background: #6a1b9a;
+            color: #fff;
+            border: none;
+            padding: 16px 36px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 18px 0 10px 0;
+            box-shadow: 0 4px 16px rgba(106, 27, 154, 0.2);
+            transition: background 0.3s, transform 0.2s;
+            outline: none;
+            position: relative;
+        }
+        #recordBtn.recording {
+            background: #8e24aa;
+            animation: pulse 1s infinite;
+            transform: scale(1.08);
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(106, 27, 154, 0.3); }
+            70% { box-shadow: 0 0 0 16px rgba(106, 27, 154, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(106, 27, 154, 0); }
+        }
+        #uploadStatus {
+            margin-top: 10px;
+            color: #ffffff;
+            font-size: 1rem;
+            min-height: 24px;
+            text-align: center;
+        }
+        .chat-history {
+            width: 100%;
+            margin-top: 18px;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 260px;
+            overflow-y: auto;
+        }
+        .bubble {
+            max-width: 80%;
+            padding: 12px 18px;
+            border-radius: 18px;
+            font-size: 1.05rem;
+            line-height: 1.5;
+            word-break: break-word;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .bubble.user {
+            background: #c4b3c2;
+            color: #333;
+            align-self: flex-end;
+            border-bottom-right-radius: 6px;
+            border: 2px solid #6a1b9a;
+            box-shadow: 0 0 0 2px #6a1b9a33;
+        }
+        .bubble.assistant {
+            background: #f1f8e9;
+            color: #333;
+            align-self: flex-start;
+            border-bottom-left-radius: 6px;
+            border: 2px solid #388e3c;
+            box-shadow: 0 0 0 2px #388e3c33;
+        }
+        .spotlight {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 400px;
+            height: 400px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            filter: blur(80px);
+            z-index: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="spotlight"></div>
+    <div class="main-layout">
+        <aside class="sidebar">
+            <h2>API Keys</h2>
+            <div class="config-group">
+                <label for="config-gemini">Gemini API Key</label>
+                <input type="password" id="config-gemini" placeholder="Gemini API Key" autocomplete="off">
+            </div>
+            <div class="config-group">
+                <label for="config-assemblyai">AssemblyAI API Key</label>
+                <input type="password" id="config-assemblyai" placeholder="AssemblyAI API Key" autocomplete="off">
+            </div>
+            <div class="config-group">
+                <label for="config-murf">Murf API Key</label>
+                <input type="password" id="config-murf" placeholder="Murf API Key" autocomplete="off">
+            </div>
+            <div class="config-group">
+                <label for="config-weatherapi">WeatherAPI Key</label>
+                <input type="password" id="config-weatherapi" placeholder="WeatherAPI Key" autocomplete="off">
+            </div>
+            <div class="config-group">
+                <label for="config-tavily">Tavily API Key</label>
+                <input type="password" id="config-tavily" placeholder="Tavily API Key" autocomplete="off">
+            </div>
+            <button id="save-api-keys">Save API Keys</button>
+            <div id="save-status" style="color: #388e3c; margin-top: 8px;"></div>
+        </aside>
+        <div class="container">
+            <h1>Sakura 🌸</h1>
+            <div class="chat-history" id="chatHistory"></div>
+            <button id="recordBtn">Start Recording</button>
+            <div id="uploadStatus"></div>
+        </div>
+    </div>
+    <audio id="echoAudioPlayer" style="display:none;"></audio>
+    <script src="/static/script.js"></script>
+</body>
+</html>
+

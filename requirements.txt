@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+gtts
+requests
+tavily
+python-dotenv
+assemblyai
