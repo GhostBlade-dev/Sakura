@@ -9,20 +9,42 @@ Welcome to Sakura! She’s a gentle, caring, and emotionally intelligent voice a
 ---
 
 ## ✨ Features
-- 🎤 **Voice chat**: Speak to Sakura and get instant responses
-- 💬 **Chat bubbles**: See your conversation in a cute, modern UI
-- 🌦️ **Weather skill**: Ask Sakura about the weather—she’ll fetch it live!
-- 🔎 **Web search**: Sakura can search the web for you in real time
-- 🧠 **Gemini LLM**: Context-aware, persona-driven answers
-- 🔊 **Murf TTS**: Sakura’s voice is generated and streamed for seamless playback
-- 🗝️ **Config sidebar**: Enter your own API keys for privacy and control
-- 🌐 **Public HTTPS hosting**: Secure and shareable via Render.com
+- 🌸 **Adorable Sakura UI:** Cozy, pastel gradients, dark mode, and a glowing, pillowy chat container.
+- 💖 **Breathing Animations:** Smooth breathing effect for the chat container and Sakura avatar, making the UI feel alive and comforting.
+- 🐾 **Animated Emoji Overlay:** Floating cute emojis (✨ 💖 🌸 🐾 🐱) with playful, gentle movement.
+- 🎀 **Cute Modal Dialog:** Enter API keys in a rounded, pastel modal dialog, triggered by a kawaii button under Sakura’s avatar.
+- 🫧 **Cozy Chat Bubbles:** Soft, rounded bubbles for both user and assistant, with pastel gradients and gentle shadows.
+- 🎤 **Voice chat:** Speak to Sakura and get instant responses.
+- 🌦️ **Weather skill:** Ask Sakura about the weather—she’ll fetch it live!
+- 🔎 **Web search:** Sakura can search the web for you in real time.
+- 🧠 **Gemini LLM:** Context-aware, persona-driven answers.
+- 🔊 **Murf TTS:** Sakura’s voice is generated and streamed for seamless playback.
+- 🗝️ **Config sidebar:** Enter your own API keys for privacy and control.
+- 🌐 **Public HTTPS hosting:** Secure and shareable via Render.com.
+
+---
+
+## 🌸 Sakura Voice Agent UI Preview
+
+![Sakura UI Screenshot](sakura-ui.png)
+
+---
+
+## 📝 Latest Updates
+- 🌸 Breathing animation for avatar and container
+- 🐾 Animated pastel/dark background gradient
+- 💖 Floating emoji overlay with improved animation
+- 🎀 Cute modal dialog for API key entry
+- 🫧 Cozy, pillowy container with pastel glow
+- 🐱 Improved assistant bubble visibility
+- 🎤 Cute, pulsing recording button
+- 📱 Responsive and accessible design
 
 ---
 
 ## 🏗️ Architecture
-- **Frontend**: HTML, CSS, JavaScript (see `index.html`, `static/script.js`)
-- **Backend**: FastAPI (Python), Murf TTS, Gemini LLM, AssemblyAI, WeatherAPI, Tavily
+- **Frontend:** HTML, CSS, JavaScript (see `index.html`, `static/script.js`)
+- **Backend:** FastAPI (Python), Murf TTS, Gemini LLM, AssemblyAI, WeatherAPI, Tavily
 - **No Node.js, no .env required!**
 
 ---
@@ -38,22 +60,22 @@ Just open the link, enter your API keys in the sidebar, and start talking!
 ### 🏡 Run Locally
 1. **Clone the repo:**
    ```sh
-git clone https://github.com/GhostBlade-dev/Sakura.git
-cd Sakura
-```
+   git clone https://github.com/GhostBlade-dev/Sakura.git
+   cd Sakura
+   ```
 2. **Install dependencies:**
    ```sh
-pip install -r requirements.txt
-```
+   pip install -r requirements.txt
+   ```
 3. **Start the server:**
    ```sh
-uvicorn audio_server:app --host 0.0.0.0 --port 8000
-```
+   uvicorn audio_server:app --host 0.0.0.0 --port 8000
+   ```
 4. **Open your browser:**
    [http://localhost:8000](http://localhost:8000)
 
 ### 🔑 API Keys
-- Enter your Gemini, AssemblyAI, Murf, WeatherAPI, and Tavily keys in the sidebar
+- Enter your Gemini, AssemblyAI, Murf, WeatherAPI, and Tavily keys in the sidebar or modal dialog
 - Sakura never stores your keys—they’re used only for your session
 
 ---
@@ -65,14 +87,6 @@ uvicorn audio_server:app --host 0.0.0.0 --port 8000
 - `POST /upload-audio`: Upload audio file
 - `GET /uploads/{filename}`: Serve uploaded audio
 - `GET /`: Serve frontend
-
----
-
-## 📝 Notes
-- 📁 Uploaded audio and synthesized files are stored in the `uploads/` directory (empty by default)
-- 🧠 Session-based chat history (cleared on server restart)
-- 🔒 All traffic is HTTPS-secured on Render
-- 🐾 Sakura’s persona is customizable in `audio_server.py`
 
 ---
 
