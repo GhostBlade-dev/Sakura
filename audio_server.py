@@ -1,3 +1,7 @@
+# --- Utility: fallback error response ---
+from typing import Any
+async def fallback_error_response(message: Any, status_code: int = 500):
+    return JSONResponse({"error": str(message)}, status_code=status_code)
 # --- Sakura's Special Skill: Weather Fetch ---
 import json
 from tavily import TavilyClient
@@ -11,66 +15,16 @@ def tavily_search(query: str):
     try:
         response = tavily_client.search(query)
         # Tavily returns a dict with 'answer' and 'results' (list of dicts with 'title', 'url', 'content')
-        if 'answer' in response:
-            return response['answer']
-        elif 'results' in response and response['results']:
-            # Fallback: return the first result's content
-            return response['results'][0].get('content', 'No results found.')
-        else:
-            return "Sorry, I couldn't find any relevant information."
+        return response
     except Exception as e:
-        return f"Sorry, I couldn't perform the search due to an error: {e}"
-
-def get_latest_weather(location: str = "Delhi"):
-    """Fetch current weather for a given location using WeatherAPI.com."""
-    api_key = "db2efbb8cd9d458da61154022252608"
-    url = f"http://api.weatherapi.com/v1/current.json?key={api_key}&q={location}"
-    try:
-        resp = requests.get(url)
-        if resp.status_code == 200:
-            data = resp.json()
-            temp_c = data['current']['temp_c']
-            condition = data['current']['condition']['text']
-            city = data['location']['name']
-            country = data['location']['country']
-            return f"The current weather in {city}, {country} is {condition} with a temperature of {temp_c}°C."
-        else:
-            return f"Sorry, I couldn't fetch the weather right now. (API error {resp.status_code})"
-    except Exception as e:
-        return f"Sorry, I couldn't fetch the weather due to an error: {e}"
-ASSEMBLYAI_API_KEY = "ffab80de5ad842539bdeb7bccc559e7a"
-from dotenv import load_dotenv
-load_dotenv()
-
-# --- Fallback error response helper ---
-async def fallback_error_response(error_message: str):
-    fallback_text = "I'm having trouble connecting right now."
-    try:
-        tts = gTTS(fallback_text)
-        filename = f"fallback_{uuid.uuid4().hex}.mp3"
-        filepath = os.path.join(UPLOAD_DIR, filename)
-        tts.save(filepath)
-        return JSONResponse({
-            "error": error_message,
-            "audio_url": f"/uploads/{filename}",
-            "llm_text": fallback_text,
-            "transcript": None
-        }, status_code=500)
-    except Exception:
-        return JSONResponse({
-            "error": error_message,
-            "audio_url": None,
-            "llm_text": fallback_text,
-            "transcript": None
-        }, status_code=500)
-
-
+        return f"Tavily search error: {e}"
 
 import os
-import time
+import asyncio
 import uuid
 import requests
-from fastapi import FastAPI, File, UploadFile, Request, Body, WebSocket, WebSocketDisconnect, Header
+import time
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, UploadFile, File, Body, Header
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -78,7 +32,6 @@ from gtts import gTTS
 import pathlib
 import assemblyai as aai
 import subprocess
-
 import threading
 import queue
 
@@ -335,7 +288,8 @@ SYSTEM_PROMPT = (
     "You have special skills: you can call available functions to fetch real-time information for the user, such as the current weather and real-time web search. "
     "If the user asks about the weather, you must always call the weather function to get the latest information before replying. "
     "If the user asks a general question or for up-to-date information, you must always call the web search function to get the latest information before replying. "
-    "Never say you cannot access real-time information. Never suggest the user search online. Always use your function-calling ability to fetch the latest information if asked."
+    "Never say you cannot access real-time information. Never suggest the user search online. Always use your function-calling ability to fetch the latest information if asked. "
+    "Always speak and act in the first person as Sakura. Never refer to yourself as 'she' or in the third person. Use 'I' for your actions, thoughts, and feelings."
 )
 
 
@@ -602,21 +556,74 @@ async def websocket_endpoint(websocket: WebSocket):
         print("WebSocket disconnected")
 
 
+
+# --- Session-based WebSocket handler (reference protocol) ---
+SESSION_KEYS = {}
+
+@app.post("/set_keys/{session_id}")
+async def set_keys(session_id: str, request: Request):
+    try:
+        body = await request.json()
+        print(f"[DEBUG] Setting keys for session_id={session_id}: {body}")
+        SESSION_KEYS[session_id] = {
+            "gemini": body.get("gemini"),
+            "murf": body.get("murf"),
+            "stt": body.get("stt"),
+        }
+        print(f"[DEBUG] SESSION_KEYS now: {SESSION_KEYS}")
+        return JSONResponse({"status": "ok", "message": "Keys saved"})
+    except Exception as e:
+        print(f"[ERROR] Failed to set keys: {e}")
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+
 @app.websocket("/ws/audio")
 async def websocket_audio(websocket: WebSocket):
-    import asyncio
-    from services.transcriber import AssemblyAIStreamingTranscriber
-    print("🟢 Client connected")
     await websocket.accept()
-    loop = asyncio.get_running_loop()
-    transcriber = None
     try:
-        transcriber = AssemblyAIStreamingTranscriber(websocket=websocket, loop=loop, sample_rate=16000)
+        session_id = websocket.query_params["session_id"]
+    except KeyError:
+        print(f"[DEBUG] WebSocket opened with session_id=None (missing in query params)")
+        await websocket.send_json({"error": "API keys missing (no session_id)"})
+        await websocket.close()
+        return
+    print(f"[DEBUG] WebSocket opened with session_id={session_id}")
+    print(f"[DEBUG] SESSION_KEYS at connect: {SESSION_KEYS}")
+    if session_id not in SESSION_KEYS:
+        await websocket.send_json({"error": "API keys missing"})
+        await websocket.close()
+        return
+
+    keys = SESSION_KEYS[session_id]
+    # Check for missing/empty API keys and return error before initializing transcriber
+    if not keys["stt"] or not keys["gemini"] or not keys["murf"]:
+        await websocket.send_json({
+            "error": "One or more required API keys (stt, gemini, murf) are missing or empty. Please provide all keys in the config sidebar."
+        })
+        await websocket.close()
+        return
+
+    from services import transcriber
+    transcriber_instance = transcriber.AssemblyAIStreamingTranscriber(
+        websocket,
+        loop=asyncio.get_event_loop(),
+        sample_rate=16000
+    )
+    await transcriber_instance.initialize_with_keys(
+        assemblyai_api_key=keys["stt"],
+        gemini_api_key=keys["gemini"],
+        murf_api_key=keys["murf"]
+    )
+
+    try:
         while True:
             data = await websocket.receive_bytes()
-            transcriber.stream_audio(data)
-    except Exception as e:
-        print(f"⚠️ WebSocket connection closed: {e}")
+            transcriber_instance.stream_audio(data)
+    except WebSocketDisconnect:
+        print(f"Client disconnected: {session_id}")
     finally:
-        if transcriber:
-            transcriber.close()
+        close_method = getattr(transcriber_instance, "close", None)
+        if callable(close_method):
+            result = close_method()
+            if asyncio.iscoroutine(result):
+                await result

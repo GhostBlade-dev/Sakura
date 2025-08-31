@@ -1,7 +1,4 @@
 import assemblyai as aai
-import assemblyai as aai
-aai.settings.api_key = "ffab80de5ad842539bdeb7bccc559e7a"
-import os
 import asyncio
 from fastapi import WebSocket
 from assemblyai.streaming.v3 import (
@@ -10,6 +7,7 @@ from assemblyai.streaming.v3 import (
     StreamingEvents, BeginEvent, TurnEvent,
     TerminationEvent, StreamingError
 )
+import os
 
 
 # In-memory chat history for WebSocket sessions
@@ -22,9 +20,20 @@ class AssemblyAIStreamingTranscriber:
         self.session_id = id(websocket)
         if self.session_id not in ws_chat_histories:
             ws_chat_histories[self.session_id] = []
+        # API keys will be set after receiving the first message from the user
+        self.assemblyai_api_key = None
+        self.gemini_api_key = None
+        self.murf_api_key = None
+        self.client = None
+        self.sample_rate = sample_rate
+
+    async def initialize_with_keys(self, assemblyai_api_key, gemini_api_key, murf_api_key):
+        self.assemblyai_api_key = assemblyai_api_key
+        self.gemini_api_key = gemini_api_key
+        self.murf_api_key = murf_api_key
         self.client = StreamingClient(
             StreamingClientOptions(
-                api_key=aai.settings.api_key,
+                api_key=self.assemblyai_api_key,
                 api_host="streaming.assemblyai.com"
             )
         )
@@ -33,7 +42,7 @@ class AssemblyAIStreamingTranscriber:
         self.client.on(StreamingEvents.Termination, self.on_termination)
         self.client.on(StreamingEvents.Error, self.on_error)
         self.client.connect(
-            StreamingParameters(sample_rate=sample_rate, format_turns=False)
+            StreamingParameters(sample_rate=self.sample_rate, format_turns=False)
         )
 
     def on_begin(self, client, event: BeginEvent):
@@ -88,7 +97,7 @@ class AssemblyAIStreamingTranscriber:
                     gemini_history.append({"role": "model", "parts": [{"text": msg["content"]}]})
             transcript_text = event.transcript
             api_url = "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:streamGenerateContent"
-            api_key = os.getenv("GEMINI_API_KEY") or "AIzaSyAAofHPKxsHyXVyN_LOyRPkkVeBvKE-2zA"
+            api_key = self.gemini_api_key
             headers = {
                 "Content-Type": "application/json",
                 "x-goog-api-key": api_key
@@ -163,9 +172,8 @@ class AssemblyAIStreamingTranscriber:
                 async def murf_tts_ws_stream(text, context_id):
                     import json
                     import websockets
-                    import os
                     MURF_WS_URL = "wss://api.murf.ai/v1/speech/stream-input"
-                    MURF_API_KEY = os.getenv("MURF_API_KEY") or "ap2_da7fc32e-9572-4f87-ab2a-9c612f3cbde4"
+                    MURF_API_KEY = self.murf_api_key
                     async with websockets.connect(f"{MURF_WS_URL}?api-key={MURF_API_KEY}&sample_rate=44100&channel_type=MONO&format=WAV") as ws:
                         voice = "en-US-amara"
                         voice_config_msg = {

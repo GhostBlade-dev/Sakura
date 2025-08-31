@@ -44,7 +44,9 @@ function getApiKeyHeaders() {
     };
 }
 
-// ...existing code...
+
+// --- Session ID: generate once per page load, reuse for all requests ---
+const session_id = Math.random().toString(36).substring(2, 15);
 
 console.log("Hello World from static/script.js");
 const recordBtn = document.getElementById('recordBtn');
@@ -71,37 +73,87 @@ let isRecording = false;
 
 function connectAudioWebSocket() {
     console.log('[Client] Opening new WebSocket for audio stream...');
-    // Dynamically set WebSocket URL based on environment
-    let wsUrl;
-    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-        wsUrl = "ws://127.0.0.1:8000/ws/audio";
-    } else {
-        // Use wss and current host for production (Render)
-        wsUrl = `wss://${window.location.host}/ws/audio`;
-    }
-    wsAudio = new WebSocket(wsUrl);
-    wsAudio.binaryType = "arraybuffer";
-    window._murfAudioChunks = [];
-    window._murfBase64AudioChunks = [];
-    window._murfAudioContext = null;
-    window._murfPlayheadTime = 0;
-    window._murfIsPlaying = false;
-    window._murfWavHeaderSet = true;
+    // Always save latest API keys from UI before POST
+    saveApiKeys();
+    // POST API keys to backend before opening WebSocket
     const SAMPLE_RATE = 44100;
-    wsAudio.onopen = () => {
-        statusDiv.textContent = "Audio WebSocket connected!";
-        console.log('[WebSocket] Connected');
-        console.log('[Client] WebSocket onopen fired. Creating new AudioContext.');
-        window._murfAudioContext = new (window.AudioContext || window.webkitAudioContext)();
-        window._murfPlayheadTime = window._murfAudioContext.currentTime;
-    };
-    wsAudio.onerror = (event) => {
-        console.error('[WebSocket] Error:', event);
-    };
-    wsAudio.onclose = (event) => {
-        console.log('[WebSocket] Closed:', event);
-        console.log('[Client] WebSocket onclose fired. Event:', event);
-    };
+    fetch(`/set_keys/${session_id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            gemini: apiKeys.gemini,
+            murf: apiKeys.murf,
+            stt: apiKeys.assemblyai
+        })
+    }).then(() => {
+        let wsUrl;
+        if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+            wsUrl = `ws://127.0.0.1:8000/ws/audio?session_id=${session_id}`;
+        } else {
+            wsUrl = `wss://${window.location.host}/ws/audio?session_id=${session_id}`;
+        }
+        console.log('[DEBUG] Opening WebSocket with URL:', wsUrl);
+        wsAudio = new WebSocket(wsUrl);
+        wsAudio.binaryType = "arraybuffer";
+        window._murfAudioChunks = [];
+        window._murfBase64AudioChunks = [];
+        window._murfAudioContext = null;
+        window._murfPlayheadTime = 0;
+        window._murfIsPlaying = false;
+        window._murfWavHeaderSet = true;
+    // SAMPLE_RATE is now defined at the top of connectAudioWebSocket
+        wsAudio.onopen = () => {
+            statusDiv.textContent = "Audio WebSocket connected!";
+            console.log('[WebSocket] Connected');
+            console.log('[Client] WebSocket onopen fired. Creating new AudioContext.');
+            // Do NOT send API keys as the first message anymore
+            window._murfAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+            window._murfPlayheadTime = window._murfAudioContext.currentTime;
+        };
+        wsAudio.onerror = (event) => {
+            console.error('[WebSocket] Error:', event);
+        };
+        wsAudio.onclose = (event) => {
+            console.log('[WebSocket] Closed:', event);
+            console.log('[Client] WebSocket onclose fired. Event:', event);
+        };
+        wsAudio.onmessage = (event) => {
+            try {
+                const msg = JSON.parse(event.data);
+                console.log('[Client] WebSocket message received:', msg);
+                if (msg.type === "transcript") {
+                    if (msg.text) {
+                        addTextMessage(msg.text, msg.is_assistant ? 'sent' : 'user', msg.is_assistant);
+                    }
+                    statusDiv.textContent = msg.end_of_turn
+                        ? `🟢 End of turn.`
+                        : 'Transcribing...';
+                    if (msg.end_of_turn && wsAudio && wsAudio.readyState === WebSocket.OPEN) {
+                        setTimeout(() => {
+                            statusDiv.textContent = "Ready.";
+                        }, 3000);
+                        console.log('[Client] Closing WebSocket after end_of_turn.');
+                        wsAudio.close();
+                    }
+                } else if (msg.type === "audio_chunk") {
+                    // Streaming audio playback logic
+                    console.log(`[Client] Audio chunk received. Decoding and queuing for playback. idx=${window._murfBase64AudioChunks.length}, len=${msg.data.length}`);
+                    const float32Array = base64ToPCMFloat32(msg.data);
+                    window._murfAudioChunks.push(float32Array);
+                    window._murfBase64AudioChunks.push(msg.data);
+                    // Start playback if not already playing
+                    if (!window._murfIsPlaying) {
+                        window._murfIsPlaying = true;
+                        window._murfAudioContext.resume();
+                        console.log('[Client] Starting chunk playback.');
+                        chunkPlay();
+                    }
+                }
+            } catch (e) {
+                console.error("WebSocket message parse error", e, event.data);
+            }
+        };
+    });
     function base64ToPCMFloat32(base64) {
         let binary = atob(base64);
         const offset = window._murfWavHeaderSet ? 44 : 0;
@@ -147,42 +199,7 @@ function connectAudioWebSocket() {
             }
         }
     }
-    wsAudio.onmessage = (event) => {
-        try {
-            const msg = JSON.parse(event.data);
-            console.log('[Client] WebSocket message received:', msg);
-            if (msg.type === "transcript") {
-                if (msg.text) {
-                    addTextMessage(msg.text, msg.is_assistant ? 'sent' : 'user', msg.is_assistant);
-                }
-                statusDiv.textContent = msg.end_of_turn
-                    ? `🟢 End of turn.`
-                    : 'Transcribing...';
-                if (msg.end_of_turn && wsAudio && wsAudio.readyState === WebSocket.OPEN) {
-                    setTimeout(() => {
-                        statusDiv.textContent = "Ready.";
-                    }, 3000);
-                    console.log('[Client] Closing WebSocket after end_of_turn.');
-                    wsAudio.close();
-                }
-            } else if (msg.type === "audio_chunk") {
-                // Streaming audio playback logic
-                console.log(`[Client] Audio chunk received. Decoding and queuing for playback. idx=${window._murfBase64AudioChunks.length}, len=${msg.data.length}`);
-                const float32Array = base64ToPCMFloat32(msg.data);
-                window._murfAudioChunks.push(float32Array);
-                window._murfBase64AudioChunks.push(msg.data);
-                // Start playback if not already playing
-                if (!window._murfIsPlaying) {
-                    window._murfIsPlaying = true;
-                    window._murfAudioContext.resume();
-                    console.log('[Client] Starting chunk playback.');
-                    chunkPlay();
-                }
-            }
-        } catch (e) {
-            console.error("WebSocket message parse error", e, event.data);
-        }
-    };
+    // Removed duplicate wsAudio.onmessage assignment here. All event handlers are set inside the .then() block above.
 }
 
 recordBtn.addEventListener('click', async () => {

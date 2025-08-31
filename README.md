@@ -116,6 +116,13 @@ Enter these in the modal or sidebar when prompted.
 
 ---
 
+## 💖 Sakura in Action (Screenshots)
+
+_Add your cute screenshots here to show off how Sakura looks and talks!_  
+✨ Bonus idea: create a little comic strip of a convo with her!
+
+---
+
 ## 📄 License
 
 Sakura is shared with love under the **MIT License**.  
@@ -123,4 +130,4 @@ Use, remix, and make your own cozy AI friend. 🌸
 
 ---
 
-> Made with heart by **shahid and Sakura**. Stay gentle, stay curious. 💕
+> Made with heart by **you and Sakura**. Stay gentle, stay curious. 💕
