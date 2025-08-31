@@ -270,9 +270,62 @@
             90% { opacity: 0.2; }
             100% { transform: translateY(-120%) translateX(0) scale(1.25) rotate(0deg); opacity: 0; }
         }
+        .murf-branding {
+      position: fixed;
+      bottom: 22px;
+      right: 28px;
+      z-index: 1000;
+      background: linear-gradient(90deg, #ffe0f7 0%, #e0e7ff 100%);
+      color: #6a1b9a;
+      border-radius: 999px;
+      box-shadow: 0 4px 24px #6a1b9a22;
+      padding: 3px 14px 3px 10px;
+      font-size: 0.8rem;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      border: 1.2px solid #f3c6f7;
+      transition: box-shadow 0.3s, transform 0.2s, background 0.3s;
+      cursor: pointer;
+      user-select: none;
+      opacity: 0.93;
+    }
+    .murf-branding:hover {
+      box-shadow: 0 8px 32px #6a1b9a44;
+      background: linear-gradient(90deg, #f3c6f7 0%, #d1c4e9 100%);
+      transform: scale(1.06);
+      opacity: 1;
+    }
+    .murf-branding a {
+      color: #6a1b9a;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+    }
+    .murf-emoji {
+      font-size: 1em;
+      margin-right: 1px;
+      filter: drop-shadow(0 1px 2px #fff6);
+      animation: murf-emoji-bounce 2.5s infinite cubic-bezier(.4,0,.2,1);
+    }
+    @keyframes murf-emoji-bounce {
+      0%, 100% { transform: translateY(0); }
+      20% { transform: translateY(-2px) scale(1.06); }
+      40% { transform: translateY(0); }
+      60% { transform: translateY(1px) scale(0.97); }
+      80% { transform: translateY(0); }
+    }
     </style>
 </head>
 <body>
+    <div class="murf-branding">
+      <a href="https://murf.ai/api/docs/introduction/overview" target="_blank" rel="noopener" title="Powered by Murf">
+        <span class="murf-emoji">🔊</span> Powered by <b>Murf</b>
+      </a>
+    </div>
     <div class="spotlight"></div>
     <div class="main-layout">
         <!-- Sakura Avatar with Breathing Animation -->
