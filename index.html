@@ -274,7 +274,21 @@
 </head>
 <body>
     <div class="spotlight"></div>
-    <div class="main-layout">
+        <!-- Sakura Demo Modal -->
+        <div id="sakura-demo-modal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100vw; height:100vh; background:rgba(30,30,40,0.85); backdrop-filter: blur(2px);">
+            <div style="max-width:420px; margin:7vh auto; background:rgba(255,255,255,0.97); border-radius:18px; box-shadow:0 8px 32px #0002; padding:2.2em 2em 1.5em 2em; position:relative; text-align:left; font-family:'Segoe UI',sans-serif;">
+                <h2 style="margin-top:0; color:#e07a9a; font-weight:700; font-size:1.6em; letter-spacing:0.01em;">🌸 Welcome to Sakura!</h2>
+                <ul style="padding-left:1.2em; margin-bottom:1.2em;">
+                    <li><b>Step 1:</b> <span style="color:#e07a9a;">Add your API keys</span> in the config sidebar (top right <span style="font-weight:bold;">⚙️</span> icon).</li>
+                    <li><b>Step 2:</b> <span style="color:#e07a9a;">Talk to Sakura</span>! She can answer with real-time <b>weather</b>, <b>web search</b>, <b>prices</b>, <b>news</b>, and more.</li>
+                    <li><b>Step 3:</b> <span style="color:#e07a9a;">Try Sakura's special skills</span> by asking about the weather, news, or anything current!</li>
+                    <li><b>Tip:</b> Click the <b>Powered by Murf</b> badge for info about Murf AI voices.</li>
+                </ul>
+                <div style="font-size:0.98em; color:#444; margin-bottom:1.2em;">Sakura is a magical, cozy voice agent. She always speaks in the first person and uses real-time info for your questions.<br><br>Enjoy your chat! 🌸</div>
+                <button id="sakura-demo-close" style="background:#e07a9a; color:#fff; border:none; border-radius:8px; padding:0.7em 1.5em; font-size:1.1em; font-weight:600; cursor:pointer; box-shadow:0 2px 8px #e07a9a33;">Got it!</button>
+            </div>
+        </div>
+        <div class="main-layout">
         <!-- Sakura Avatar with Breathing Animation -->
         <div style="position: absolute; left: 32px; top: 32px; z-index: 2; display: flex; flex-direction: column; align-items: center;">
             <img id="sakura-avatar" src="https://i.pinimg.com/1200x/c8/cb/e8/c8cbe877415ccd29070ac76ed2b61668.jpg" alt="Sakura Avatar" style="width:120px; height:120px; border-radius:50%; box-shadow:0 4px 24px #7c3dafb9;">
@@ -323,7 +337,20 @@
         </div>
     </div>
     <audio id="echoAudioPlayer" style="display:none;"></audio>
-    <script src="/static/script.js"></script>
+        <script src="/static/script.js"></script>
+        <script src="/static/sakura-tour.js"></script>
+        <script>
+        // Sakura Demo Modal logic
+        window.addEventListener('DOMContentLoaded', function() {
+            if (!localStorage.getItem('sakura_demo_seen')) {
+                document.getElementById('sakura-demo-modal').style.display = 'block';
+            }
+            document.getElementById('sakura-demo-close').onclick = function() {
+                document.getElementById('sakura-demo-modal').style.display = 'none';
+                localStorage.setItem('sakura_demo_seen', '1');
+            };
+        });
+        </script>
     <script>
         // Show modal on load, hide on save
         window.onload = function() {
