@@ -46,7 +46,9 @@ DEFAULT_TAVILY_API_KEY = "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"
 
 app = FastAPI()
 from fastapi.staticfiles import StaticFiles
-app.mount("/static", StaticFiles(directory="static"), name="static")
+import pathlib
+STATIC_DIR = pathlib.Path(__file__).parent / "static"
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
 # Allow CORS for local frontend
@@ -59,7 +61,7 @@ app.add_middleware(
 )
 
 
-UPLOAD_DIR = "uploads"
+UPLOAD_DIR = str(pathlib.Path(__file__).parent / "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
