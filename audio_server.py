@@ -14,8 +14,10 @@ def tavily_search(query: str):
     """Perform a real-time web search using Tavily."""
     try:
         response = tavily_client.search(query)
-        # Tavily returns a dict with 'answer' and 'results' (list of dicts with 'title', 'url', 'content')
-        return response
+        # Return only the answer string for Gemini function-calling compatibility
+        if isinstance(response, dict) and 'answer' in response:
+            return response['answer']
+        return str(response)
     except Exception as e:
         return f"Tavily search error: {e}"
 
@@ -285,10 +287,10 @@ SYSTEM_PROMPT = (
     "You answer as Sakura, with gentle affection, subtle hints of your feelings, and emotional intelligence. "
     "Always remember and use the previous conversation turns to provide context-aware responses. "
     "If the user refers to something from earlier in the conversation, use that information. "
-    "You have special skills: you can call available functions to fetch real-time information for the user, such as the current weather and real-time web search. "
+    "You have special skills: you can call available functions to fetch real-time information for the user, such as the current weather, real-time web search, market prices, news, and facts. "
     "If the user asks about the weather, you must always call the weather function to get the latest information before replying. "
-    "If the user asks a general question or for up-to-date information, you must always call the web search function to get the latest information before replying. "
-    "Never say you cannot access real-time information. Never suggest the user search online. Always use your function-calling ability to fetch the latest information if asked. "
+    "If the user asks a general question, for up-to-date information, or about prices, news, or facts, you must always call the web search function to get the latest information before replying. "
+    "Never say you cannot access real-time information. Never say your knowledge is not current. Never suggest the user search online. Always use your function-calling ability to fetch the latest information if asked. "
     "Always speak and act in the first person as Sakura. Never refer to yourself as 'she' or in the third person. Use 'I' for your actions, thoughts, and feelings."
 )
 
@@ -386,11 +388,49 @@ async def agent_chat(
     else:
         return JSONResponse({"error": "Transcription timed out."}, status_code=500)
 
+
     # 3. Update chat history for this session
     if session_id not in chat_histories:
         chat_histories[session_id] = []
-    # Add user message
-    chat_histories[session_id].append({"role": "user", "content": transcript_text if transcript_text else ""})
+    user_message = transcript_text if transcript_text else ""
+    chat_histories[session_id].append({"role": "user", "content": user_message})
+
+    # 3.5. Skill-first: If user message matches weather or search, fetch real data and inject as function result
+    def is_weather_query(user_text):
+        if not user_text:
+            return False
+        user_text = user_text.lower()
+        weather_keywords = [
+            "weather", "temperature", "humidity", "rain", "cloud", "forecast", "wind", "sunny", "rainy", "storm", "snow", "climate"
+        ]
+        return any(word in user_text for word in weather_keywords)
+
+    def is_search_query(user_text):
+        if not user_text:
+            return False
+        user_text = user_text.lower()
+        search_keywords = [
+            "search", "find", "lookup", "who is", "what is", "when is", "where is", "how to", "news", "price", "latest", "current", "update", "info", "information"
+        ]
+        return any(word in user_text for word in search_keywords)
+
+    skill_function = None
+    skill_result = None
+    skill_name = None
+    skill_args = None
+    import re
+    if is_weather_query(user_message):
+        skill_name = "get_latest_weather"
+        location = "Delhi"
+        match = re.search(r'in ([a-zA-Z\s]+)', user_message)
+        if match:
+            location = match.group(1).strip()
+        skill_args = {"location": location}
+        skill_result = get_latest_weather(location)
+    elif is_search_query(user_message):
+        skill_name = "tavily_search"
+        skill_args = {"query": user_message}
+        skill_result = tavily_search(user_message)
 
     # 4. Format chat history for Gemini: system prompt only as first message, correct role mapping, and prepend summary
     gemini_history = []
@@ -411,6 +451,14 @@ async def agent_chat(
                 gemini_history.append({"role": "user", "parts": [{"text": msg["content"]}]})
         elif msg["role"] == "assistant":
             gemini_history.append({"role": "model", "parts": [{"text": msg["content"]}]})
+
+    # If a skill was triggered, inject function result into Gemini history before LLM call
+    if skill_name and skill_result is not None:
+        gemini_history.append({
+            "role": "function",
+            "name": skill_name,
+            "parts": [{"text": skill_result}]
+        })
 
     # 5. Gemini function-calling: define function schemas for weather and Tavily search
     function_declarations = [
@@ -449,14 +497,47 @@ async def agent_chat(
         return JSONResponse({"error": f"Gemini API error: {resp.text}"}, status_code=500)
     result = resp.json()
 
-    # 6. Check for function call in Gemini response
+
+    # 6. Check for function call in Gemini response, and post-process fallback answers
     llm_text = None
+    def is_fallback(text):
+        if not text:
+            return False
+        text = text.lower()
+        fallback_phrases = [
+            "i don't have access", "my knowledge isn't current", "my knowledge is not current",
+            "i'm afraid i don't have access", "i'm unable to access real-time", "i cannot access real-time",
+            "i'm sorry, i don't have access", "i do not have access to real-time",
+            "i would recommend checking", "i would suggest checking", "i recommend checking",
+            "i suggest checking", "i would recommend using", "i would suggest using",
+            "i recommend using", "i suggest using", "i would recommend visiting", "i would suggest visiting",
+            "i recommend visiting", "i suggest visiting", "i would recommend a weather app", "i would suggest a weather app",
+            "i recommend a weather app", "i suggest a weather app", "i would recommend a weather website", "i would suggest a weather website",
+            "i recommend a weather website", "i suggest a weather website", "i don't have a direct window to the current skies",
+            "i wish i could give you a live update", "i don't have real-time info", "i do not have real-time info"
+        ]
+        return any(phrase in text for phrase in fallback_phrases)
+
+    def is_weather_query(user_text):
+        if not user_text:
+            return False
+        user_text = user_text.lower()
+        weather_keywords = [
+            "weather", "temperature", "humidity", "rain", "cloud", "forecast", "wind", "sunny", "rainy", "storm", "snow", "climate"
+        ]
+        return any(word in user_text for word in weather_keywords)
+
+    user_query = chat_histories[session_id][-1]["content"] if chat_histories[session_id] else ""
+    function_call_detected = False
+    weather_function_called = False
     if "candidates" in result and result["candidates"]:
         candidate = result["candidates"][0]
         parts = candidate["content"].get("parts", [])
         if parts and "functionCall" in parts[0]:
             func_call = parts[0]["functionCall"]
+            function_call_detected = True
             if func_call["name"] == "get_latest_weather":
+                weather_function_called = True
                 location = func_call["args"].get("location", "Delhi")
                 weather_result = get_latest_weather(location)
                 chat_histories[session_id].append({"role": "function", "name": "get_latest_weather", "content": weather_result})
@@ -491,8 +572,54 @@ async def agent_chat(
                 llm_text = parts[0]["text"]
             except Exception:
                 llm_text = str(result)
+            # Post-process fallback answers: if fallback, force Tavily search
+            if is_fallback(llm_text):
+                search_result = tavily_search(user_query)
+                chat_histories[session_id].append({"role": "function", "name": "tavily_search", "content": search_result})
+                gemini_history.append({"role": "function", "name": "tavily_search", "parts": [{"text": search_result}]})
+                payload2 = {"contents": gemini_history}
+                resp2 = requests.post(url, headers=headers_llm, json=payload2)
+                if resp2.status_code != 0:
+                    return JSONResponse({"error": f"Gemini API error: {resp2.text}"}, status_code=500)
+                result2 = resp2.json()
+                try:
+                    llm_text = result2["candidates"][0]["content"]["parts"][0]["text"]
+                except Exception:
+                    llm_text = str(result2)
     else:
         llm_text = str(result)
+
+    # If user asked about weather and Gemini did NOT call the weather function, force weather function call and overwrite answer
+    if is_weather_query(user_query) and not weather_function_called:
+        import re
+        location = "Delhi"
+        match = re.search(r'in ([a-zA-Z\s]+)', user_query)
+        if match:
+            location = match.group(1).strip()
+        weather_result = get_latest_weather(location)
+        chat_histories[session_id].append({"role": "function", "name": "get_latest_weather", "content": weather_result})
+        gemini_history.append({"role": "function", "name": "get_latest_weather", "parts": [{"text": weather_result}]})
+        payload2 = {"contents": gemini_history}
+        resp2 = requests.post(url, headers=headers_llm, json=payload2)
+        if resp2.status_code != 200:
+            return JSONResponse({"error": f"Gemini API error: {resp2.text}"}, status_code=500)
+        result2 = resp2.json()
+        try:
+            llm_text = result2["candidates"][0]["content"]["parts"][0]["text"]
+        except Exception:
+            llm_text = str(result2)
+
+
+    # 6.5. Post-process: if a skill was triggered and Gemini's answer does not mention the real data, overwrite with skill result
+    def skill_result_in_llm_text(skill_result, llm_text):
+        if not skill_result or not llm_text:
+            return False
+        # Check if a significant part of the skill result is present in the LLM answer (case-insensitive)
+        skill_snippet = str(skill_result)[:40].lower()  # Use first 40 chars for fuzzy match
+        return skill_snippet in llm_text.lower()
+
+    if skill_result is not None and not skill_result_in_llm_text(skill_result, llm_text):
+        llm_text = str(skill_result)
 
     # 7. Add assistant response to chat history
     chat_histories[session_id].append({"role": "assistant", "content": llm_text})
