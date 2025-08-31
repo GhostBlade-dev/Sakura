@@ -50,16 +50,30 @@ window.addEventListener('shepherd:ready', function() {
       style.innerHTML = `
         @import url('https://fonts.googleapis.com/css2?family=Pacifico&family=Fredoka:wght@500&family=Quicksand:wght@500&family=Comfortaa:wght@700&family=Indie+Flower&display=swap');
         .shepherd-element.sakura-tour {
-          background: linear-gradient(135deg, #fff0fa 60%, #e0f7fa 100%) !important;
-          border-radius: 36px !important;
-          box-shadow: 0 8px 32px 0 #7c3daf55, 0 0 0 8px #f8bbd088, 0 0 24px 8px #f8bbd0cc !important;
-          border: 3px solid #f8bbd0 !important;
+          background: linear-gradient(135deg, #f8bbd0 60%, #e1bee7 100%) !important;
+          border-radius: 32px !important;
+          box-shadow: 0 4px 24px 0 #f8bbd088, 0 0 0 6px #e1bee722 !important;
+          border: none !important;
           font-family: 'Comfortaa', 'Indie Flower', 'Pacifico', 'Fredoka', 'Quicksand', 'Comic Sans MS', 'Segoe UI', cursive, sans-serif !important;
-          color: #a14e7a !important;
-          padding: 32px 36px 28px 36px !important;
+          color: #7c3daf !important;
+          padding: 18px 40px !important;
           animation: sakura-tour-pop 0.7s cubic-bezier(.4,2,.6,1);
           position: relative;
           z-index: 10001;
+        }
+        /* Chat bubble tail, matching recordBtn style */
+        .shepherd-element.sakura-tour::before {
+          content: '';
+          position: absolute;
+          left: 54px;
+          bottom: -22px;
+          width: 32px;
+          height: 32px;
+          background: linear-gradient(135deg, #f8bbd0 60%, #e1bee7 100%);
+          border-bottom-left-radius: 32px 32px;
+          box-shadow: 0 4px 12px #e1bee744;
+          transform: rotate(10deg);
+          z-index: 2;
         }
         .shepherd-element.sakura-tour .shepherd-title {
           font-family: 'Pacifico', 'Indie Flower', 'Comfortaa', 'Fredoka', 'Quicksand', 'Comic Sans MS', 'Segoe UI', cursive, sans-serif !important;
@@ -79,13 +93,13 @@ window.addEventListener('shepherd:ready', function() {
         .shepherd-element.sakura-tour::after {
           content: '';
           position: absolute;
-          top: -7px; left: -7px; right: -7px; bottom: -7px;
-          border-radius: 40px;
+          top: -2px; left: -2px; right: -2px; bottom: -2px;
+          border-radius: 36px 36px 24px 60px/36px 36px 36px 60px;
           pointer-events: none;
           z-index: 0;
-          border: 3.5px solid transparent;
+          border: 2px solid transparent;
           background: linear-gradient(120deg, #f8bbd0 40%, #e0f7fa 60%, #fff0fa 100%) border-box;
-          box-shadow: 0 0 32px 8px #f8bbd088, 0 0 0 8px #e0f7fa44;
+          box-shadow: 0 0 12px 2px #f8bbd088;
           animation: sakura-outline-glow 2.2s linear infinite;
         }
         .shepherd-element.sakura-tour .sakura-tour-sparkle {
@@ -105,9 +119,9 @@ window.addEventListener('shepherd:ready', function() {
           z-index: 2;
         }
         @keyframes sakura-outline-glow {
-          0% { box-shadow: 0 0 32px 8px #f8bbd088, 0 0 0 8px #e0f7fa44; }
-          50% { box-shadow: 0 0 48px 16px #e07a9a66, 0 0 0 12px #f8bbd044; }
-          100% { box-shadow: 0 0 32px 8px #f8bbd088, 0 0 0 8px #e0f7fa44; }
+          0% { box-shadow: 0 0 12px 2px #f8bbd088; }
+          50% { box-shadow: 0 0 20px 6px #e07a9a44; }
+          100% { box-shadow: 0 0 12px 2px #f8bbd088; }
         }
         /* Sparkle effect */
         .shepherd-element.sakura-tour .sakura-tour-sparkle {

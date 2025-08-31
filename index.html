@@ -339,18 +339,7 @@
     <audio id="echoAudioPlayer" style="display:none;"></audio>
         <script src="/static/script.js"></script>
         <script src="/static/sakura-tour.js"></script>
-        <script>
-        // Sakura Demo Modal logic
-        window.addEventListener('DOMContentLoaded', function() {
-            if (!localStorage.getItem('sakura_demo_seen')) {
-                document.getElementById('sakura-demo-modal').style.display = 'block';
-            }
-            document.getElementById('sakura-demo-close').onclick = function() {
-                document.getElementById('sakura-demo-modal').style.display = 'none';
-                localStorage.setItem('sakura_demo_seen', '1');
-            };
-        });
-        </script>
+    <!-- Sakura Demo Modal logic removed: only Shepherd.js tour will show for onboarding -->
     <script>
         // Show modal on load, hide on save
         window.onload = function() {
